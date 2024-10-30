@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
     // Declare ALL variables and structures for main() HERE, NOT INLINE (including the following...)
     WSADATA wsaData; // contains details about WinSock DLL implementation
     //initialize data
-    int sock1, sock2;
+    int sock;
     int numArgs;
     numArgs = argc;
 
@@ -89,47 +89,32 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
         fprintf(stderr, "Failed to initialize Winsock");
         exit(1);
     }
-    //set up socks
-    sock1 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-    sock2 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-
+    //set up UDP socket
+    sock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 
     //check for success of socks
-    if (sock1 == INVALID_SOCKET) {
+    if (sock == INVALID_SOCKET) {
         DisplayFatalErr("socket() function failed for sock1.");
     }
     else {
-        printf("Socket1 created successfully. Press ENTER key to continue...");
+        printf("Socket created successfully. Press ENTER key to continue...");
         getchar();
-    }
-    if (sock2 == INVALID_SOCKET) {
-        DisplayFatalErr("socket() function failed for sock2.");
-    }
-    else {
-        printf("Socket2 created successfully. Press ENTER key to continue...");
-        getchar();
-    }
-
-    //connect to server
-    if (connect(sock1, (struct sockaddr*)&serverInfo, sizeof(serverInfo)) < 0) {
-        DisplayFatalErr("connect() function failed.\n");
-    }
-    else {
-        printf("Connected to server!\n");
     }
 
     //Check for null msg(length = 0)
     if (msgLen == 0) {
-        DisplayFatalErr("We not good with message length\n");
+        DisplayFatalErr("Cannot have an empty message!\n");
     }
-    //send function
-    int PASCAL FAR send(SOCKET s, const char FAR * buf, int len, int flags);
+
+    //sendto function
+ /*   int PASCAL FAR sendto(SOCKET s, char FAR * buf, int len, int flags,
+        struct sockaddr FAR * to, int tolen);*/
     //send message
-    if (send(sock1, message, msgLen, 0) != msgLen) {
+    if (sendto(sock, message, msgLen, 0, (struct sockaddr *) &serverInfo, sizeof(serverInfo)) != msgLen) {
         DisplayFatalErr("Failed to Send Message\n");
     }
     else {
-        printf("Send Successfull!\n");
+        printf("Sent Successfull!\n");
     }
 
     //receive function
@@ -139,7 +124,7 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
     int PASCAL FAR closesocket(SOCKET s);// closing socket when finished
 
     printf("msg len(expected bytes to receive): %d\n", msgLen);//expected bytes to receive
-    while ((bytesRead = recv(sock1, rcvBuffer, RCVBUFSIZ - 1, 0)) > 0) {
+    while ((bytesRead = recv(sock, rcvBuffer, RCVBUFSIZ - 1, 0)) > 0) {
         //errors
         if (bytesRead <= 0) {
             DisplayFatalErr("Message not received");
@@ -147,18 +132,18 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
 
 
         totalBytesReceived += bytesRead;//updating total bytes
-        rcvBuffer[bytesRead] = '\0';//C string for printing
+        //rcvBuffer[bytesRead] = '\0';//C string for printing
 
         printf("Received chunk: %s\n", rcvBuffer); // Print received chunk
         printf("%d\n", bytesRead);
 
         //all the message has been received --> exit
         if (totalBytesReceived == msgLen) {
-            closesocket(sock1);
+            closesocket(sock);
         }
     }
 
-    closesocket(sock1);//close socket and send FIN
+    closesocket(sock);//close socket and send FIN
     printf("Socket Closed Successfully...\n");
     WSACleanup();//cleanup
     printf("Winsock resources cleaned up successfully...\n");
@@ -166,3 +151,14 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
 
     exit(0);
 }
+
+
+//DONE:
+
+/*
+1. Verify the correct number of command line arguments have been provided by the user on the
+client and server command lines. You don’t need to validate the content of those arguments.
+Use the chosen default port if desired
+
+
+*/

@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
         DisplayFatalErr("Winsock Unsuccessfully Loaded");
     }
 
-    serverSock = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP); // Create server socket
+    serverSock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP); // Create server socket
 
     //server info
     struct sockaddr_in6 serverInfo;
@@ -85,6 +85,7 @@ int main(int argc, char* argv[]) {
     listen(serverSock, SOMAXCONN);
 
     printf("SRM's IPv6 echo server is ready for client connection...\n");
+    getchar();
 
     for (;;) {
         clientInfoLen = sizeof(clientInfo);
@@ -101,3 +102,16 @@ int main(int argc, char* argv[]) {
     }
     exit(0);
 }
+
+//DONE:
+
+/*
+1. Verify the correct number of command line arguments have been provided by the user on the
+client and server command lines. You don’t need to validate the content of those arguments.
+Use the chosen default port if desired
+
+2. Display a message on the server console that includes your initials, similar to this:
+JD's IPv6 echo server is ready for UDP client...
+
+
+*/
