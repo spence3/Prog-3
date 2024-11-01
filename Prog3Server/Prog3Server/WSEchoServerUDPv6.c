@@ -28,6 +28,7 @@
 // #define ALL required constants HERE, not inline
 // #define is a macro, don't terminate with ';' For example...
 #define RCVBUFSIZ 50 // buffer size for received messages
+#define MAXECHO 512
 const char rcvBuffer[RCVBUFSIZ]; // Buffer to store received data
 
 // declare any functions located in other .c files here
@@ -48,6 +49,9 @@ int main(int argc, char* argv[]) {
     struct sockaddr_in6 clientInfo; //Holds client port & addr after client connects
     int clientInfoLen;
     int clientSock;
+    char echoBuffer[MAXECHO];
+    int echoLen;
+    
     //verify the correct number of command line arguments have been provided by the user.
     if (numArgs != 2) {
         printf("Number of arguments are not corret... Must have 2.");
@@ -81,23 +85,32 @@ int main(int argc, char* argv[]) {
         DisplayFatalErr("Bind failed");
     }
 
-    //maximum simultaneous client connection requests allowed.
-    listen(serverSock, SOMAXCONN);
 
     printf("SRM's IPv6 echo server is ready for client connection...\n");
-    getchar();
+    //getchar();
 
+    clientInfoLen = sizeof(clientInfo);
     for (;;) {
-        clientInfoLen = sizeof(clientInfo);
-        clientSock = accept(serverSock, (struct sockaddr*)&clientInfo, &clientInfoLen);
+        echoLen = recvfrom(serverSock, echoBuffer, MAXECHO, 0, (struct sockaddr*)&clientInfo, &clientInfoLen);
 
+        if (echoLen == SOCKET_ERROR) {
+            DisplayFatalErr("recvfrom error");
+        }
+
+        printf("Echo Length! %d\n", echoLen);
         //display the IP address and port number of the client, and the server’s own port number
         char clientIP[INET6_ADDRSTRLEN];
         inet_ntop(AF_INET6, &clientInfo.sin6_addr, clientIP, sizeof(clientIP));
         unsigned short clientPort = ntohs(clientInfo.sin6_port);
-        printf("Proeccessing the client at %s, client port %d, server port %d\n", clientIP, clientPort, port);
+        printf("Processing the client at %s, client port %d, server port %d\n", clientIP, clientPort, port);
 
-        //Echos message back to client
+        if (sendto(serverSock, echoBuffer, echoLen, 0, (struct sockaddr*)&clientInfo, clientInfoLen) == SOCKET_ERROR) {
+            DisplayFatalErr("sendto error!");
+        }
+        else {
+            printf("sent successfully");
+        }
+
 
     }
     exit(0);

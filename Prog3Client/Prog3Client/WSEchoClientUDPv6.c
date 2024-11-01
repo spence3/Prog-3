@@ -43,32 +43,34 @@ void DisplayFatalErr(char* errMsg)
 int main(int argc, char* argv[]) { // argc is # of strings following command, argv[] is array of ptrs to the strings
     // Declare ALL variables and structures for main() HERE, NOT INLINE (including the following...)
     WSADATA wsaData; // contains details about WinSock DLL implementation
+
+  
     //initialize data
     int sock;
     int numArgs;
     numArgs = argc;
+
+    //Server IP address and port number come from the client command line
+    char* ip;
+    int port;
+    const char* message;
+    int msgLen;
+    int fromSize;
 
     if (numArgs != 4) {
         printf("Number of arguments are not corret... Must have 4.");
         exit(1);
     }
 
-    //Declare structure and variables
-    struct sockaddr_in6 serverInfo;
-
-    //Server IP address and port number come from the client command line
-    //initialize message ("This is a test")
-    char* ip;
-    int port;
-    const char* message;
-    int msgLen;
-
     //get ip and port from command line
     ip = argv[1];
     port = (unsigned short)atoi(argv[2]);
     message = argv[3];
-    msgLen = strlen(message);
+    msgLen = strlen(message) + 1;//account for null terminator
 
+
+    //Declare structure and variables
+    struct sockaddr_in6 serverInfo;
     //procedural code
     memset(&serverInfo, 0, sizeof(serverInfo));//zero out the structure
 
@@ -89,10 +91,10 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
         fprintf(stderr, "Failed to initialize Winsock");
         exit(1);
     }
-    //set up UDP socket
+    //set UDP socket
     sock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 
-    //check for success of socks
+    //check for success of socket
     if (sock == INVALID_SOCKET) {
         DisplayFatalErr("socket() function failed for sock1.");
     }
@@ -106,10 +108,7 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
         DisplayFatalErr("Cannot have an empty message!\n");
     }
 
-    //sendto function
- /*   int PASCAL FAR sendto(SOCKET s, char FAR * buf, int len, int flags,
-        struct sockaddr FAR * to, int tolen);*/
-    //send message
+    //send message to server
     if (sendto(sock, message, msgLen, 0, (struct sockaddr *) &serverInfo, sizeof(serverInfo)) != msgLen) {
         DisplayFatalErr("Failed to Send Message\n");
     }
@@ -124,22 +123,31 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
     int PASCAL FAR closesocket(SOCKET s);// closing socket when finished
 
     printf("msg len(expected bytes to receive): %d\n", msgLen);//expected bytes to receive
-    while ((bytesRead = recv(sock, rcvBuffer, RCVBUFSIZ - 1, 0)) > 0) {
+    //same address received from should be same address sent to.
+    struct sockaddr_in6 fromAddr;
+    fromSize = sizeof(fromAddr);
+    while ((bytesRead = recvfrom(sock, rcvBuffer, RCVBUFSIZ - 1, 0, (struct sockaddr*)&fromAddr, &fromSize)) != SOCKET_ERROR){
         //errors
         if (bytesRead <= 0) {
-            DisplayFatalErr("Message not received");
+            DisplayFatalErr("Message not received.");
+        }
+        if (memcmp(&fromAddr.sin6_addr, &serverInfo.sin6_addr, sizeof(fromAddr.sin6_addr)) != 0) {
+            DisplayFatalErr("Message received from unknown server.");
+        }
+        if (bytesRead != msgLen) {
+            DisplayFatalErr("Message length received doesn't match original message length.");
         }
 
-
         totalBytesReceived += bytesRead;//updating total bytes
-        //rcvBuffer[bytesRead] = '\0';//C string for printing
+        rcvBuffer[bytesRead] = '\0';//C string for printing
+
 
         printf("Received chunk: %s\n", rcvBuffer); // Print received chunk
-        printf("%d\n", bytesRead);
 
         //all the message has been received --> exit
         if (totalBytesReceived == msgLen) {
-            closesocket(sock);
+            printf("Message has been fully received!\n");
+            break;
         }
     }
 
