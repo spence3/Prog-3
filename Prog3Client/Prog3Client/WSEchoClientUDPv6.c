@@ -18,39 +18,29 @@
 // on this project if I violate this policy.
 // ----------------------------------------------------------------------------
 
-#include <stdio.h> // for print functions
-#include <stdlib.h> // for exit()
-#include <winsock2.h> // for Winsock2 functions
-#include <ws2tcpip.h> // adds support for getaddrinfo & getnameinfo for v4+6 name resolution
-#include <Ws2ipdef.h> // optional - needed for MS IP Helper
-#include <stdbool.h> //include bool
-
-// #define ALL required constants HERE, not inline
-// #define is a macro, don't terminate with ';' For example...
-#define RCVBUFSIZ 50 // buffer size for received messages
-char rcvBuffer[RCVBUFSIZ]; // Buffer to store received data
-
-// declare any functions located in other .c files here
+#include <stdio.h> 
+#include <stdlib.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <Ws2ipdef.h>
+#include <stdbool.h>
+#define RCVBUFSIZ 50 
 
 void DisplayFatalErr(char* errMsg)
 {
     // Returns errorcode from current task or thread
-    fprintf(stderr, "%s: %d\n", errMsg, WSAGetLastError()); 
-        WSACleanup();
+    fprintf(stderr, "%s: %d\n", errMsg, WSAGetLastError());
+    WSACleanup();
     exit(1);
 }
 
-int main(int argc, char* argv[]) { // argc is # of strings following command, argv[] is array of ptrs to the strings
-    // Declare ALL variables and structures for main() HERE, NOT INLINE (including the following...)
-    WSADATA wsaData; // contains details about WinSock DLL implementation
-
-  
-    //initialize data
+int main(int argc, char* argv[]) {
+    //declare variables
+    WSADATA wsaData; 
+    char rcvBuffer[RCVBUFSIZ];
     int sock;
     int numArgs;
     numArgs = argc;
-
-    //Server IP address and port number come from the client command line
     char* ip;
     int port;
     const char* message;
@@ -109,7 +99,7 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
     }
 
     //send message to server
-    if (sendto(sock, message, msgLen, 0, (struct sockaddr *) &serverInfo, sizeof(serverInfo)) != msgLen) {
+    if (sendto(sock, message, msgLen, 0, (struct sockaddr*)&serverInfo, sizeof(serverInfo)) != msgLen) {
         DisplayFatalErr("Failed to Send Message\n");
     }
     else {
@@ -126,7 +116,7 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
     //same address received from should be same address sent to.
     struct sockaddr_in6 fromAddr;
     fromSize = sizeof(fromAddr);
-    while ((bytesRead = recvfrom(sock, rcvBuffer, RCVBUFSIZ - 1, 0, (struct sockaddr*)&fromAddr, &fromSize)) != SOCKET_ERROR){
+    while ((bytesRead = recvfrom(sock, rcvBuffer, RCVBUFSIZ - 1, 0, (struct sockaddr*)&fromAddr, &fromSize)) != SOCKET_ERROR) {
         //errors
         if (bytesRead <= 0) {
             DisplayFatalErr("Message not received.");
@@ -159,14 +149,3 @@ int main(int argc, char* argv[]) { // argc is # of strings following command, ar
 
     exit(0);
 }
-
-
-//DONE:
-
-/*
-1. Verify the correct number of command line arguments have been provided by the user on the
-client and server command lines. You don’t need to validate the content of those arguments.
-Use the chosen default port if desired
-
-
-*/

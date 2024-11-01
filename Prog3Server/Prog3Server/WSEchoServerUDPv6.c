@@ -1,10 +1,10 @@
-// CS 2690 Program 1
-// Simple Windows Sockets Echo Client (IPv6)
+// CS 2690 Program 3
+// UDP Server
 // Last update: 2/12/19
-// Spencer Miller 601 10/11/24
+// Spencer Miller 601 11/01/24
 // Windows 11 VS 2019
 //
-// Usage: WSEchoClientv6 <server IPv6 address> <server port> <"message to echo">
+// Usage: WSEchoClientv6 <ip addr> <server port> <"message">
 // Companion server is WSEchoServerv6
 // Server usage: WSEchoServerv6 <server port>
 //
@@ -39,18 +39,10 @@ void DisplayFatalErr(const char* errMsg);
 
 
 int main(int argc, char* argv[]) {
-    // Declare ALL variables and structures for main() HERE, NOT INLINE (including the following...)
-    WSADATA wsaData; // contains details about WinSock DLL implementation
-    //initialize data
+    WSADATA wsaData;   
     int numArgs = argc;
-    //int MAXQUEUED = 128; // maximum simultaneous client connection requests.
     int port;
     int serverSock;
-    struct sockaddr_in6 clientInfo; //Holds client port & addr after client connects
-    int clientInfoLen;
-    int clientSock;
-    char echoBuffer[MAXECHO];
-    int echoLen;
     
     //verify the correct number of command line arguments have been provided by the user.
     if (numArgs != 2) {
@@ -85,11 +77,17 @@ int main(int argc, char* argv[]) {
         DisplayFatalErr("Bind failed");
     }
 
-
     printf("SRM's IPv6 echo server is ready for client connection...\n");
     //getchar();
 
+    //Holds client port & addr after client connects
+    struct sockaddr_in6 clientInfo; 
+    int clientInfoLen;
+    int clientSock;
     clientInfoLen = sizeof(clientInfo);
+
+    char echoBuffer[MAXECHO];
+    int echoLen;
     for (;;) {
         echoLen = recvfrom(serverSock, echoBuffer, MAXECHO, 0, (struct sockaddr*)&clientInfo, &clientInfoLen);
 
@@ -108,23 +106,9 @@ int main(int argc, char* argv[]) {
             DisplayFatalErr("sendto error!");
         }
         else {
-            printf("sent successfully");
+            printf("sent successfully\n");
+            printf("ready for next client message\n");
         }
-
-
     }
     exit(0);
 }
-
-//DONE:
-
-/*
-1. Verify the correct number of command line arguments have been provided by the user on the
-client and server command lines. You don’t need to validate the content of those arguments.
-Use the chosen default port if desired
-
-2. Display a message on the server console that includes your initials, similar to this:
-JD's IPv6 echo server is ready for UDP client...
-
-
-*/
